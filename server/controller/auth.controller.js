@@ -40,8 +40,8 @@ exports.login = async (req, res) => {
   }
 };
 
-//get a user
-exports.getUser= async (req, res) => {
+//get a user by id
+exports.getUser = async (req, res) => {
   const userId = req.params.userId;
   const username = req.params.username;
   try {
@@ -54,4 +54,18 @@ exports.getUser= async (req, res) => {
     res.status(500).json(err);
   }
 };
+
+//get all user
+exports.getAllUser = async (req, res) => {
+  try {
+    User.find().then(data => {
+      if (data) {
+        res.status(200).send(data);
+      }
+    })
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
 

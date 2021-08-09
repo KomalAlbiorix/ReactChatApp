@@ -10,5 +10,7 @@ module.exports = app => {
 
   router.get('/user/:userId', authController.getUser);
 
+  router.get('/user', authController.getAllUser);
+
   app.use('/auth', router);
 };

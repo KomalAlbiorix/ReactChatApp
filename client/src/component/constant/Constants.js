@@ -5,6 +5,8 @@ const Constants = {
     CONVERSATION_URL: "http://localhost:8080/conversation/",
     GET_USER_URL: 'http://localhost:8080/auth/user/',
     MESSAGE_URL: 'http://localhost:8080/message/',
+    GET_FRIENDS_URL: 'http://localhost:8080/auth/friends/',
+
 }
 
 export default Constants

@@ -1,4 +1,5 @@
 import './App.css';
+import { useEffect } from 'react';
 import {
   BrowserRouter as Router,
   Switch,
@@ -7,21 +8,28 @@ import {
 import Login from './component/login/Login';
 import Register from './component/register/Register';
 import Chat from './component/chat/Chat';
+
 import 'antd/dist/antd.css';
-// import { useContext } from "react";
+import { StateMachineProvider, createStore } from 'little-state-machine';
+import user from './component/store/user';
+
+
+createStore(user);
 
 function App() {
-  // const userContext = useContext(localStorage.getItem('user'))
 
   return (
     <Router>
-      <Switch>
-        {/* <userContext.Provider value={userContext}> */}
+      <StateMachineProvider>
+        <Switch>
+          {/* <userContext.Provider value={userContext}> */}
           <Route exact path="/login" component={Login} />
           <Route exact path="/register" component={Register} />
           <Route exact path="/chat" component={Chat} />
-        {/* </userContext.Provider> */}
-      </Switch>
+
+          {/* </userContext.Provider> */}
+        </Switch>
+      </StateMachineProvider>
     </Router>
   );
 }

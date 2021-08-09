@@ -6,34 +6,22 @@ import axios from 'axios';
 import Constants from "../constant/Constants";
 import { useHistory } from "react-router";
 // import GoogleLogin from 'react-google-login';
+import { useStateMachine } from 'little-state-machine';
+import { UpdateUserDetails } from '../store/actions/updateUserDetails';
 
 export default function Login() {
     const { register, handleSubmit, formState: { errors } } = useForm();
     const history = useHistory();
+    const { actions } = useStateMachine({ UpdateUserDetails });
 
     const onSubmit = async (data) => {
         await axios.post(Constants.LOGIN_URL, data).then(res => {
-            if (res) localStorage.setItem('user', JSON.stringify(res.data))
+            if (res)
+                actions.UpdateUserDetails(res.data)
             history.push("/chat")
         })
     };
 
-//     const handleGoogleLogin = async (res) => {
-//         const googleresponse = {
-//             username: res.profileObj.name,
-//             email: res.profileObj.email,
-//             token: res.googleId,
-
-//         };
-//         if (res.profileObj) {
-//             await axios.post(Constants.REGISTER_URL, googleresponse)
-//             history.push("/chat")
-//         }
-//    }
-
-    // const handleLoginFailure = () => {
-
-    // }
     return (
         <div className="login">
             <div className="loginWrapper">
@@ -64,7 +52,7 @@ export default function Login() {
                         <p>{errors.password?.message}</p>
 
                         <button className="loginButton" type="submit">
-                        Login
+                            Login
                         </button>
                         <button className="loginRegisterButton" onClick={() => history.push("/register")}>Register</button>
 

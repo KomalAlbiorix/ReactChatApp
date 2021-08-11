@@ -30,3 +30,17 @@ exports.getConversation=async (req, res) => {
     }
 
 }
+
+
+//get all conversation
+exports.getAllConversation=async (req, res) => {
+    try {
+        const getAllConversation = await  Conversation.find()
+        res.status(200).json(getAllConversation)
+    }
+
+    catch (err) {
+        res.status(500).json(err)
+    }
+
+}

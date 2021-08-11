@@ -1,5 +1,6 @@
 const express = require("express");
 const app = express();
+app.use(express.static(__dirname + '/public/images'));
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const cors = require("cors");

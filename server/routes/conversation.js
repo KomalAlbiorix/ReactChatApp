@@ -6,6 +6,7 @@ module.exports = Conversation => {
     router.post("/conversation", conversationController.createConversation);
 
     router.get("/conversation/:userId", conversationController.getConversation);
+    router.get("/conversation/", conversationController.getAllConversation);
 
     Conversation.use('/', router);
 };

@@ -5,7 +5,10 @@ import "./login.css";
 import axios from 'axios';
 import Constants from "../constant/Constants";
 import { useHistory } from "react-router";
-// import GoogleLogin from 'react-google-login';
+import { notification } from 'antd';
+import GoogleLogin from 'react-google-login';
+import { GoogleLogout } from 'react-google-login';
+
 import { useStateMachine } from 'little-state-machine';
 import { UpdateUserDetails } from '../store/actions/updateUserDetails';
 
@@ -16,14 +19,50 @@ export default function Login() {
 
     const onSubmit = async (data) => {
         await axios.post(Constants.LOGIN_URL, data).then(res => {
-            if (res)
+            if (res) {
                 actions.UpdateUserDetails(res.data)
-            history.push("/chat")
+                notification.open({
+                    message: 'Login successfully',
+                });
+                history.push("/chat")
+            }
         })
     };
 
+    const handleGoogleLogin = async (response) => {
+        console.log("response", response)
+        const formData = new FormData();
+        formData.append("username", response.profileObj.name)
+        formData.append("email", response.profileObj.email)
+        formData.append("token", response.googleId)
+        formData.append("profilePicture", response.profileObj.imageUrl)
+        const config = {
+            headers: {
+                'content-type': 'multipart/form-data'
+            }
+        }
+        await axios.post(Constants.REGISTER_URL, formData, config).then(res => {
+            if (res.data) {
+                notification.open({
+                    message: 'Register successfully',
+                });
+            }
+        })
+    }
+    const handleLoginFailure = (e) => {
+        console.log("eeee", e)
+    }
+
     return (
         <div className="login">
+            {/* <GoogleLogin
+                clientId={Constants.GOOGLE_CLIENT_ID}
+                buttonText="Login with google"
+                onSuccess={handleGoogleLogin}
+                onFailure={handleLoginFailure}
+                cookiePolicy={'single_host_origin'}
+
+            /> */}
             <div className="loginWrapper">
                 <div className="loginLeft">
                     <h3 className="loginLogo">Let's Make Chat</h3>

@@ -14,15 +14,27 @@ exports.createMessage = async (req, res) => {
 
 }
 
-//get conversation
+// get conversation
 exports.getMessage = async (req, res) => {
     try {
         const messages = await Message.find({ conversationId: req.params.conversationId })
         res.status(200).json(messages)
     }
-
     catch (err) {
         res.status(500).json(err)
     }
 
 }
+
+// exports.getMessage = async (req, res) => {
+//     let senderId=req.body.senderId
+//     let receiverId=req.body.receiverId
+//     try {
+//         const messages = await Message.find({ senderId: senderId,conversationId:receiverId })
+//         res.status(200).json(messages)
+//     }
+
+//     catch (err) {
+//         res.status(500).json(err)
+//     }
+// }

@@ -4,11 +4,13 @@ const User = require("../models/User");
 
 //REGISTER
 exports.register = async (req, res) => {
+  console.log("req.file.originalname",req.file)
+  console.log("req.body.profilePicture",req.body.profilePicture)
   try {
     //generate new password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(req.body.password, salt);
-
+    
     //create new user
     const newUser = new User({
       username: req.body.username,
@@ -16,7 +18,7 @@ exports.register = async (req, res) => {
       password: hashedPassword,
       profilePicture: req.body.profilePicture ? req.body.profilePicture : req.file.originalname
     });
-
+console.log("newUser",newUser)
     const user = await newUser.save();
     res.status(200).json(user);
 

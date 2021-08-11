@@ -8,7 +8,6 @@ import Topbar from "../topbar/Topbar";
 import "./chat.css";
 import { io } from 'socket.io-client';
 import { useStateMachine } from 'little-state-machine';
-// import moment from 'moment';
 
 export default function Chat() {
     const [conversations, setConversations] = useState([]);
@@ -18,17 +17,15 @@ export default function Chat() {
     const [arrivalMessage, setArrivalMessage] = useState(null);
     const [onlineUsers, setOnlineUsers] = useState([]);
     const [userList, setUserList] = useState([]);
-    const [currentConversationId, setCurrentConversationId] = useState(null);
 
     const socket = useRef();
-    const { state } = useStateMachine({});
+    const { actions, state } = useStateMachine({});
 
     const scrollRef = useRef();
 
     useEffect(() => {
         socket.current = io("ws://localhost:8900");
         socket.current.on("getMessage", (data) => {
-            console.log("data", data)
             setArrivalMessage({
                 senderId: data.senderId,
                 message: data.message,
@@ -39,14 +36,14 @@ export default function Chat() {
 
     useEffect(() => {
         arrivalMessage &&
-            currentChat?._id === arrivalMessage.senderId &&
+            currentChat?.members.includes(arrivalMessage.senderId) &&
             setMessages((prev) => [...prev, arrivalMessage]);
     }, [arrivalMessage, currentChat]);
-
 
     useEffect(() => {
         socket.current.emit("addUser", state.userDetails._id);
         socket.current.on("getUsers", async (users) => {
+            console.log("users===>", users)
             await setOnlineUsers(users.filter(i => i.userId !== state.userDetails._id))
         });
         axios.get(Constants.GET_USER_URL).then(res => {
@@ -54,30 +51,27 @@ export default function Chat() {
         })
     }, [state.userDetails]);
 
+
+
     useEffect(() => {
+        const getConversations = async () => {
+            try {
+                const res = await axios.get(Constants.CONVERSATION_URL + state.userDetails._id);
+                setConversations(res.data);
+            } catch (err) {
+                console.log(err);
+            }
+        };
         getConversations();
     }, [state.userDetails._id]);
-
-    /**
-     * Get all conversation
-     * @returns 
-     */
-    const getConversations = async () => {
-        try {
-            const res = await axios.get(Constants.CONVERSATION_URL);
-            setConversations(res.data);
-            return res.data
-        } catch (err) {
-            console.log(err);
-            return []
-        }
-    };
 
     useEffect(() => {
         const getMessages = async () => {
             try {
                 await axios.get(Constants.MESSAGE_URL + currentChat._id).then(res => {
-                    if (res) setMessages(res.data)
+                    if (res) {
+                        setMessages(res.data)
+                    }
                 })
             }
             catch (err) {
@@ -93,78 +87,58 @@ export default function Chat() {
         const message = {
             senderId: state.userDetails._id,
             message: newMessage,
-            conversationId: currentConversationId,
+            conversationId: currentChat._id,
         };
+
+        const receiverId = currentChat.members.find(
+            (member) => member !== state.userDetails._id
+        );
+
         socket.current.emit("sendMessage", {
             senderId: state.userDetails._id,
-            receiverId: currentChat._id,
+            receiverId,
             message: newMessage,
         });
 
         try {
             const res = await axios.post(Constants.MESSAGE_URL, message)
-            // let date = convertMessageTime(res.data.createdAt, new Date())
-            // res.data.createdAt = date
-            //
-             setMessages([...messages, res.data]);
+            setMessages([...messages, res.data]);
             setNewMessage("");
         } catch (err) {
             console.log(err);
         }
     };
 
-    // const convertMessageTime = (chatTime, currentTime) => {
-    //      let time = moment(currentTime).format("h:mm");
-    //    let diff= moment.utc(moment(currentTime, "HH:mm:ss").diff(moment(chatTime, "HH:mm:ss"))).format("mm")* 60
-     
-    // }
     useEffect(() => {
         scrollRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
 
-    /**
-     * Handle chat conversation
-     * @param {*} currentChat 
-     */
-    const handleConversation = async (selectChat) => {
-        const obj = await getConversations();
-        await setCurrentChat(selectChat)
-        let isChat = await obj.filter(i => i.members.includes(state.userDetails._id) && i.members.includes(selectChat._id));
-        if (isChat.length > 0) {
-            setCurrentConversationId(isChat[0]._id)
-            await getMessages(isChat[0]._id)
-
-        } else {
-            let conversationObj = {
-                "senderId": state.userDetails._id,
-                "receiverId": selectChat._id
-            }
-            await axios.post(Constants.CONVERSATION_URL, conversationObj).then(async res => {
-                if (res) {
-                    setCurrentConversationId(res.data._id)
-                    await getMessages(selectChat._id)
+    const handleUserClick = async (list) => {
+        let temp = []
+        let conversationObj = {
+            "senderId": state.userDetails._id,
+            "receiverId": list._id
+        }
+        await axios.post(Constants.CONVERSATION_URL, conversationObj).then(async res => {
+            if (res.data) {
+                temp.push(res.data)
+                if (conversations.length === 0) await setConversations(temp)
+                else {
+                    for (let index = 0; index < conversations.length; index++) {
+                        let isAvailableChat = JSON.stringify(conversations[index].members) === JSON.stringify(res.data.members)
+                        if (isAvailableChat) {
+                            break;
+                        }
+                        else {
+                            await setConversations([...conversations, res.data])
+                        }
+                    }
                 }
-            })
-        }
+                await setCurrentChat(res.data)
+            }
+        })
     }
-
-    /**
-     * Get messages
-     * @param {*} id 
-     * @returns 
-     */
-    const getMessages = async (id) => {
-        try {
-            await axios.get(Constants.MESSAGE_URL + id).then(res => {
-                              if (res) setMessages(res.data)
-            })
-        }
-        catch (err) {
-            return err
-        }
-    }
-
     return (
         <>
             <Topbar />
@@ -172,37 +146,21 @@ export default function Chat() {
                 <div className="chatMenu">
                     <div className="chatMenuWrapper">
                         <input placeholder="Search for friends" className="chatMenuInput" />
-                        {userList.map((list) => (
-                            <div onClick={() => {
-                                handleConversation(list)
-                            }}>
-                                <Conversation conversation={list} currentUser={state.userDetails} />
+                        {conversations.map((c) => (
+                            <div onClick={() => setCurrentChat(c)}>
+                                <Conversation conversation={c} currentUser={state.userDetails} />
                             </div>
                         ))}
                     </div>
                 </div>
                 <div className="chatBox">
-                    <div className="chatbarContainer">
-                        <div className="topbarLeft">
-                            {currentChat ?
-                                <> <img
-                                    src="avatar.png"
-                                    alt=""
-                                    className="topbarImg"
-                                />
-                                    <strong> {currentChat?.username}</strong></> : ""}
-
-                            <div className="chatLine"></div>
-                        </div>
-                    </div>
-
                     <div className="chatBoxWrapper">
                         {currentChat ? (
                             <>
                                 <div className="chatBoxTop">
                                     {messages.map((m) => (
                                         <div ref={scrollRef}>
-                                            <Message message={m} own={m.senderId === state.userDetails._id ? true : false} />
+                                            <Message message={m} own={m.senderId === state.userDetails._id} />
                                         </div>
                                     ))}
                                 </div>
@@ -212,7 +170,6 @@ export default function Chat() {
                                         placeholder="write something..."
                                         onChange={(e) => setNewMessage(e.target.value)}
                                         value={newMessage}
-                                        onKeyDown={(e) => e.key === 'Enter' ? handleSubmit(e) : ""}
                                     ></textarea>
                                     <button className="chatSubmitButton" onClick={handleSubmit}>
                                         Send
@@ -226,19 +183,34 @@ export default function Chat() {
                         )}
                     </div>
                 </div>
-
-
-
                 <div className="chatOnline">
+                    {console.log("onlineUsers", onlineUsers)}
                     <div className="chatOnlineWrapper">
                         <ChatOnline
-                        // onlineUsers={onlineUsers}
-                        // currentId={state.userDetails._id}
-                        // setCurrentChat={setCurrentChat}
+                            onlineUsers={onlineUsers}
+                            currentId={state.userDetails._id}
+                            setCurrentChat={setCurrentChat}
                         />
                     </div>
                 </div>
-
+                <div className="chatMenu">
+                    <div className="chatMenuWrapper">
+                        <input placeholder="User List" className="chatMenuInput"></input>
+                        {userList.map(list => {
+                            return <div className="conversation">
+                                <div onClick={() => handleUserClick(list)}>
+                                    <div className="chatOnlineImgContainer">
+                                        <img
+                                            className="conversationImage"
+                                            src="https://i.picsum.photos/id/866/200/300.jpg?hmac=rcadCENKh4rD6MAp6V_ma-AyWv641M4iiOpe1RyFHeI"
+                                            alt="" ></img>
+                                    </div>
+                                    <div className="conversationName">{list.username}</div>
+                                </div>
+                            </div>
+                        })}
+                    </div>
+                </div>
             </div>
         </>
     );

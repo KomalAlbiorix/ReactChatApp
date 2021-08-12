@@ -29,6 +29,6 @@ require("./routes/auth")(app);
 require("./routes/conversation")(app);
 require("./routes/message")(app);
 
-app.listen(8080, () => {
+app.listen(4000, () => {
     console.log("Backend server is running!");
 });

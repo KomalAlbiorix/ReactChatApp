@@ -1,16 +1,18 @@
-import axios from 'axios';
-import Constants from '../component/constant/Constants';
+import moment from 'moment';
 
-export default getFriendsList = () => {
-    try {
-        axios.get(Constants.GET_USER_URL + friendId).then(res => {
-            if (res) {
-                setUser(res.data)
-            }
-        })
+export function dateConvert(chatTime) {
+    let date = moment(chatTime);
+    if (moment().diff(date, 'days') > 1) {
+        return date.fromNow(); // '2 days ago' etc.
     }
-    catch (err) {
-        return err
-    }
+    return date.calendar().split(' ')[0];
+}
 
+
+export function timeConvert(chatTime) {
+    let date = moment(chatTime);
+    if (moment().diff(date, 'days') > 1) {
+        return date.fromNow(); // '2 days ago' etc.
+    }
+    return date.calendar().split('at')[1];
 }

@@ -7,7 +7,7 @@ const { json } = require("body-parser");
 const app = express();
 app.use(cors())
 app.use(express, json())
-const server = app.listen('8080', () => {
+const server = app.listen('4000', () => {
     console.log("server started")
 })
 

@@ -33,13 +33,12 @@ io.on("connection", (socket) => {
   //send and get message
   socket.on("sendMessage", ({ senderId, receiverId, message }) => {
     const user = getUser(receiverId);
-    if(user){
+    if (user) {
       io.to(user.socketId).emit("getMessage", {
         senderId,
         message,
       });
     }
-   
   });
 
   //when disconnect
@@ -48,4 +47,13 @@ io.on("connection", (socket) => {
     removeUser(socket.id);
     io.emit("getUsers", users);
   });
+
+  //remove user
+  socket.on('removeUserFromSocket', (userId) => {
+    let user = users.filter(i => i.userId === userId)
+    if (user.length > 0) {
+      removeUser(user[0].socketId);
+      io.emit("getUsers", users);
+    }
+  })
 });

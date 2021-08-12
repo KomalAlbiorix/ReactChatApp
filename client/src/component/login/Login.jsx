@@ -11,16 +11,18 @@ import { GoogleLogout } from 'react-google-login';
 
 import { useStateMachine } from 'little-state-machine';
 import { UpdateUserDetails } from '../store/actions/updateUserDetails';
+import { UpdateLoginStatus } from '../store/actions/updateLoginStatus';
 
 export default function Login() {
     const { register, handleSubmit, formState: { errors } } = useForm();
     const history = useHistory();
-    const { actions } = useStateMachine({ UpdateUserDetails });
+    const { actions } = useStateMachine({ UpdateUserDetails, UpdateLoginStatus });
 
     const onSubmit = async (data) => {
         await axios.post(Constants.LOGIN_URL, data).then(res => {
             if (res) {
                 actions.UpdateUserDetails(res.data)
+                actions.UpdateLoginStatus(true)
                 notification.open({
                     message: 'Login successfully',
                 });
@@ -112,7 +114,6 @@ export default function Login() {
                                 cookiePolicy={'single_host_origin'}
                             />
                         </div> */}
-
                     </form>
                 </div>
             </div>

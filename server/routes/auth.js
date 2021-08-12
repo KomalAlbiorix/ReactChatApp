@@ -12,5 +12,8 @@ module.exports = app => {
 
   router.get('/user', authController.getAllUser);
 
+  // router.get('/user/', authController.searchUser);
+
+
   app.use('/auth', router);
 };

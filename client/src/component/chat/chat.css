@@ -56,6 +56,13 @@ padding: 10px;
      height: 60vh;
 }
 
+.chatBoxWithEmojiTop{
+  height: 100%;
+  overflow-y: scroll;
+  padding-right: 10px;
+  height: 30vh;
+}
+
 .chatBoxTop::-webkit-scrollbar {
     width: 5px;
   }
@@ -71,7 +78,7 @@ padding: 10px;
     border-radius: 5px;
     border:none;
     cursor: pointer;
-    background-color: gray;
+    /* background-color: #1877F2; */
 }
 
 .noConversationText{
@@ -176,6 +183,12 @@ padding: 10px;
   .chatLine{
     border: 1px solid rgb(202, 200, 200);
     margin-top: 4px;
+  }
+
+  .chatEmoji{
+    width: 80%;
+    height: 200px;
+    padding: 10px;
   }
   
   

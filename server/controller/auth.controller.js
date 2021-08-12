@@ -4,13 +4,13 @@ const User = require("../models/User");
 
 //REGISTER
 exports.register = async (req, res) => {
-  console.log("req.file.originalname",req.file)
-  console.log("req.body.profilePicture",req.body.profilePicture)
+  console.log("req.file.originalname", req.file)
+  console.log("req.body.profilePicture", req.body.profilePicture)
   try {
     //generate new password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(req.body.password, salt);
-    
+
     //create new user
     const newUser = new User({
       username: req.body.username,
@@ -18,7 +18,7 @@ exports.register = async (req, res) => {
       password: hashedPassword,
       profilePicture: req.body.profilePicture ? req.body.profilePicture : req.file.originalname
     });
-console.log("newUser",newUser)
+    console.log("newUser", newUser)
     const user = await newUser.save();
     res.status(200).json(user);
 
@@ -30,6 +30,7 @@ console.log("newUser",newUser)
 //LOGIN
 exports.login = async (req, res) => {
   try {
+    console.log("req",req)
     const user = await User.findOne({ email: req.body.email });
     !user && res.status(404).send({ message: "user not found" });
 
@@ -60,7 +61,32 @@ exports.getUser = async (req, res) => {
 //get all user
 exports.getAllUser = async (req, res) => {
   try {
-    User.find().then(data => {
+    if (req.query.username) {
+      await User.find({ username: req.query.username.toLowerCase()}).then(data => {
+        if (data) {
+          res.status(200).send(data);
+        }
+      })
+    }
+    else {
+      await User.find().then(data => {
+        if (data) {
+          res.status(200).send(data);
+        }
+      })
+    }
+
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+//search user 
+
+exports.searchUser = async (req, res) => {
+  try {
+    User.find({ username: req.params.username }).then(data => {
+      console.log("dataa", data)
       if (data) {
         res.status(200).send(data);
       }
@@ -69,5 +95,4 @@ exports.getAllUser = async (req, res) => {
     res.status(500).json(err);
   }
 };
-
 

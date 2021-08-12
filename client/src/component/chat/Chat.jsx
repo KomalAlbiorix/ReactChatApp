@@ -1,14 +1,19 @@
 import axios from 'axios';
 import { useEffect, useState, useRef } from 'react';
+import { useDebouncedCallback } from 'use-debounce';
+import { io } from 'socket.io-client';
 import ChatOnline from "../chatOnline/ChatOnline";
 import Constants from '../constant/Constants';
 import Conversation from "../conversations/Conversation";
 import Message from "../message/Message";
 import Topbar from "../topbar/Topbar";
 import "./chat.css";
-import { io } from 'socket.io-client';
 import { useStateMachine } from 'little-state-machine';
-// import moment from 'moment';
+import { dateConvert } from '../../utils/common';
+import { SmileOutlined } from '@ant-design/icons';
+import EmojiPicker from 'emoji-picker-react';
+
+// import 'emoji-picker-react/dist/universal/style.scss';
 
 export default function Chat() {
     const [conversations, setConversations] = useState([]);
@@ -18,12 +23,16 @@ export default function Chat() {
     const [arrivalMessage, setArrivalMessage] = useState(null);
     const [onlineUsers, setOnlineUsers] = useState([]);
     const [userList, setUserList] = useState([]);
+    const [filterList, setFilterList] = useState([]);
     const [currentConversationId, setCurrentConversationId] = useState(null);
+    const [isOpenEmoji, setIsOpenEmoji] = useState(false);
+    const [emojiCounter, setEmojiCounter] = useState(0);
 
     const socket = useRef();
     const { state } = useStateMachine({});
-
     const scrollRef = useRef();
+
+
 
     useEffect(() => {
         socket.current = io("ws://localhost:8900");
@@ -49,14 +58,20 @@ export default function Chat() {
         socket.current.on("getUsers", async (users) => {
             await setOnlineUsers(users.filter(i => i.userId !== state.userDetails._id))
         });
-        axios.get(Constants.GET_USER_URL).then(res => {
-            setUserList(res.data.filter(i => i._id !== state.userDetails._id))
+        axios.get(Constants.GET_USER_URL).then(async res => {
+            await setUserList(res.data.filter(i => i._id !== state.userDetails._id))
+            await setFilterList(res.data.filter(i => i._id !== state.userDetails._id))
         })
-    }, [state.userDetails]);
+    }, [state.userDetails, state.isLogin]);
 
     useEffect(() => {
         getConversations();
     }, [state.userDetails._id]);
+
+    useEffect(() => {
+        scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages]);
+
 
     /**
      * Get all conversation
@@ -77,7 +92,10 @@ export default function Chat() {
         const getMessages = async () => {
             try {
                 await axios.get(Constants.MESSAGE_URL + currentChat._id).then(res => {
-                    if (res) setMessages(res.data)
+                    if (res) {
+                        setMessages(res.data)
+                        dateConvert(res.data.createdAt)
+                    }
                 })
             }
             catch (err) {
@@ -89,7 +107,9 @@ export default function Chat() {
     }, [currentChat]);
 
     const handleSubmit = async (e) => {
+        setIsOpenEmoji(false)
         e.preventDefault();
+
         const message = {
             senderId: state.userDetails._id,
             message: newMessage,
@@ -103,24 +123,13 @@ export default function Chat() {
 
         try {
             const res = await axios.post(Constants.MESSAGE_URL, message)
-            // let date = convertMessageTime(res.data.createdAt, new Date())
-            // res.data.createdAt = date
-            //
-             setMessages([...messages, res.data]);
+            setMessages([...messages, res.data]);
             setNewMessage("");
+
         } catch (err) {
             console.log(err);
         }
     };
-
-    // const convertMessageTime = (chatTime, currentTime) => {
-    //      let time = moment(currentTime).format("h:mm");
-    //    let diff= moment.utc(moment(currentTime, "HH:mm:ss").diff(moment(chatTime, "HH:mm:ss"))).format("mm")* 60
-     
-    // }
-    useEffect(() => {
-        scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages]);
 
 
     /**
@@ -157,11 +166,66 @@ export default function Chat() {
     const getMessages = async (id) => {
         try {
             await axios.get(Constants.MESSAGE_URL + id).then(res => {
-                              if (res) setMessages(res.data)
+                if (res) setMessages(res.data)
             })
         }
         catch (err) {
             return err
+        }
+    }
+
+
+    const debounced = useDebouncedCallback(
+        (value) => {
+            if (value !== "") {
+                let filterData = filterList.filter(item => item.username.includes(value))
+                setFilterList(filterData)
+            }
+            else {
+                setFilterList(userList)
+            }
+        },
+        500,
+        // The maximum time func is allowed to be delayed before it's invoked:
+        { maxWait: 2000 }
+    );
+
+
+    /**
+     * show day and time in message box
+     * @param { } index 
+     * @returns 
+     */
+    const chatDate = (index) => {
+        if (index === 0) return true
+        else {
+            let temp = dateConvert(messages[index].createdAt)
+            let temp1 = dateConvert(messages[index - 1].createdAt)
+            return temp1 === temp ? false : true
+        }
+    }
+
+    /**
+     * handle emoji click
+     * @param {*} event 
+     * @param {*} emojiObject 
+     */
+    const onEmojiClick = (event, emojiObject) => {
+        // setChosenEmoji(emojiObject);
+        setNewMessage(newMessage + emojiObject.emoji)
+    };
+
+    /**
+     * Handle Emoji open/close event
+     */
+    const handleEmojiClickEvent = () => {
+        if (emojiCounter === 0) {
+            setIsOpenEmoji(true)
+            setEmojiCounter(emojiCounter + 1)
+        }
+        else if(emojiCounter===1){
+            setEmojiCounter(emojiCounter - 1)
+            setIsOpenEmoji(false)
         }
     }
 
@@ -171,8 +235,8 @@ export default function Chat() {
             <div className="messenger">
                 <div className="chatMenu">
                     <div className="chatMenuWrapper">
-                        <input placeholder="Search for friends" className="chatMenuInput" />
-                        {userList.map((list) => (
+                        <input placeholder="Search for friends" className="chatMenuInput" onChange={(e) => debounced(e.target.value)} />
+                        {filterList.map((list) => (
                             <div onClick={() => {
                                 handleConversation(list)
                             }}>
@@ -181,6 +245,7 @@ export default function Chat() {
                         ))}
                     </div>
                 </div>
+
                 <div className="chatBox">
                     <div className="chatbarContainer">
                         <div className="topbarLeft">
@@ -190,22 +255,33 @@ export default function Chat() {
                                     alt=""
                                     className="topbarImg"
                                 />
-                                    <strong> {currentChat?.username}</strong></> : ""}
-
-                            <div className="chatLine"></div>
+                                    <strong> {currentChat?.username}</strong>
+                                    <div className="chatLine"></div></> : ""}
                         </div>
                     </div>
 
                     <div className="chatBoxWrapper">
                         {currentChat ? (
                             <>
-                                <div className="chatBoxTop">
-                                    {messages.map((m) => (
+                                {console.log("isOpenEmoji", isOpenEmoji)}
+                                <div className={isOpenEmoji ? "chatBoxWithEmojiTop" : "chatBoxTop"}>
+                                    {/* <div className="chatBoxTop"> */}
+
+                                    {messages.map((m, index) => (
                                         <div ref={scrollRef}>
-                                            <Message message={m} own={m.senderId === state.userDetails._id ? true : false} />
+                                            <Message message={m} own={m.senderId === state.userDetails._id ? true : false}
+                                                isShowDay={chatDate(index)} />
                                         </div>
                                     ))}
                                 </div>
+
+                                {isOpenEmoji ?
+                                    <div className="chatEmoji">
+
+                                        <EmojiPicker
+                                            pickerStyle={{ width: "90%", height: "90%" }}
+                                            onEmojiClick={onEmojiClick} />  </div> : ""}
+
                                 <div className="chatBoxBottom">
                                     <textarea
                                         className="chatMessageInput"
@@ -214,7 +290,9 @@ export default function Chat() {
                                         value={newMessage}
                                         onKeyDown={(e) => e.key === 'Enter' ? handleSubmit(e) : ""}
                                     ></textarea>
-                                    <button className="chatSubmitButton" onClick={handleSubmit}>
+                                    <div><SmileOutlined onClick={() => handleEmojiClickEvent()} />
+                                    </div>
+                                    <button disabled={!newMessage} className="chatSubmitButton" style={{ backgroundColor: newMessage ? "#1877F2" : " #cccccc" }} onClick={handleSubmit}>
                                         Send
                                     </button>
                                 </div>
@@ -226,19 +304,15 @@ export default function Chat() {
                         )}
                     </div>
                 </div>
-
-
-
                 <div className="chatOnline">
                     <div className="chatOnlineWrapper">
                         <ChatOnline
-                        // onlineUsers={onlineUsers}
-                        // currentId={state.userDetails._id}
-                        // setCurrentChat={setCurrentChat}
+                            onlineUsers={onlineUsers}
+                            currentId={state.userDetails._id}
+                            setCurrentChat={setCurrentChat}
                         />
                     </div>
                 </div>
-
             </div>
         </>
     );

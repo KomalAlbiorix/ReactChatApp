@@ -190,6 +190,16 @@ padding: 10px;
     height: 200px;
     padding: 10px;
   }
+  .uploadAttachment{
+    font-size: 30px;
+    color: #1877F2 !important;
+    margin-left: 10px !important;
+  }
+  .uploadIcon{
+    font-size: 30px;
+    width: 0px !important;
+    margin-left: 10px !important;
+  }
   
   
 

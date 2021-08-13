@@ -6,7 +6,7 @@ const Constants = {
     GET_USER_URL: 'http://localhost:4000/auth/user/',
     MESSAGE_URL: 'http://localhost:4000/message/',
     GET_FRIENDS_URL: 'http://localhost:4000/auth/friends/',
-
+    UPLOAD_URL: "http://localhost:4000/upload/",
 }
 
 export default Constants

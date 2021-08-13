@@ -12,6 +12,8 @@ import { useStateMachine } from 'little-state-machine';
 import { dateConvert } from '../../utils/common';
 import { SmileOutlined } from '@ant-design/icons';
 import EmojiPicker from 'emoji-picker-react';
+import { Upload } from 'antd';
+import { RightCircleOutlined, FileImageOutlined } from '@ant-design/icons';
 
 // import 'emoji-picker-react/dist/universal/style.scss';
 
@@ -223,12 +225,45 @@ export default function Chat() {
             setIsOpenEmoji(true)
             setEmojiCounter(emojiCounter + 1)
         }
-        else if(emojiCounter===1){
+        else if (emojiCounter === 1) {
             setEmojiCounter(emojiCounter - 1)
             setIsOpenEmoji(false)
         }
     }
 
+    /**
+     * handle image change
+     * @param {*} param0 
+     */
+    const onChange = async ({ fileList: newFileList }) => {
+        const formData = new FormData();
+        console.log(newFileList[0].originFileObj)
+        formData.append("attachment", newFileList[0].originFileObj)
+        formData.append("type", "image")
+        const config = {
+            headers: {
+                'content-type': 'multipart/form-data'
+            }
+        }
+        await axios.post(Constants.UPLOAD_URL, formData, config).then(async res => {
+            if (res.data) await setNewMessage(res.data.url)
+        })
+    };
+
+    const onPreview = async file => {
+        let src = file.url;
+        if (!src) {
+            src = await new Promise(resolve => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file.originFileObj);
+                reader.onload = () => resolve(reader.result);
+            });
+        }
+        const image = new Image();
+        image.src = src;
+        const imgWindow = window.open(src);
+        imgWindow.document.write(image.outerHTML);
+    };
     return (
         <>
             <Topbar />
@@ -263,7 +298,6 @@ export default function Chat() {
                     <div className="chatBoxWrapper">
                         {currentChat ? (
                             <>
-                                {console.log("isOpenEmoji", isOpenEmoji)}
                                 <div className={isOpenEmoji ? "chatBoxWithEmojiTop" : "chatBoxTop"}>
                                     {/* <div className="chatBoxTop"> */}
 
@@ -292,9 +326,26 @@ export default function Chat() {
                                     ></textarea>
                                     <div><SmileOutlined onClick={() => handleEmojiClickEvent()} />
                                     </div>
-                                    <button disabled={!newMessage} className="chatSubmitButton" style={{ backgroundColor: newMessage ? "#1877F2" : " #cccccc" }} onClick={handleSubmit}>
+
+                                    <div className="uploadAttachment">
+                                        {newMessage ? <RightCircleOutlined onClick={handleSubmit} />
+                                            : <Upload
+                                                className="profile"
+                                                listType="picture-card"
+                                                onChange={onChange}
+                                                onPreview={onPreview}
+                                            >
+                                                <FileImageOutlined />
+                                            </Upload>}
+                                    </div>
+
+                                    {/* <button
+                                     disabled={!newMessage} 
+                                     className="chatSubmitButton"
+                                      style={{ backgroundColor: newMessage ? "#1877F2" : " #cccccc" }}
+                                       onClick={handleSubmit}>
                                         Send
-                                    </button>
+                                    </button> */}
                                 </div>
                             </>
                         ) : (

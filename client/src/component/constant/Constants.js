@@ -7,6 +7,7 @@ const Constants = {
     MESSAGE_URL: 'http://localhost:4000/message/',
     GET_FRIENDS_URL: 'http://localhost:4000/auth/friends/',
     UPLOAD_URL: "http://localhost:4000/upload/",
+    GROUP_CHAT_URL:'http://localhost:4000/group/',
 }
 
 export default Constants

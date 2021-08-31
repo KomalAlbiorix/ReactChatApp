@@ -12,8 +12,9 @@ import { useStateMachine } from 'little-state-machine';
 import { dateConvert } from '../../utils/common';
 import { SmileOutlined } from '@ant-design/icons';
 import EmojiPicker from 'emoji-picker-react';
-import { Upload } from 'antd';
-import { RightCircleOutlined, FileImageOutlined } from '@ant-design/icons';
+import { Upload, Modal, Button, Input } from 'antd';
+import { RightCircleOutlined, FileImageOutlined, PlusOutlined } from '@ant-design/icons';
+import NewChannel from '../createChannel/NewChannel';
 
 // import 'emoji-picker-react/dist/universal/style.scss';
 
@@ -29,6 +30,10 @@ export default function Chat() {
     const [currentConversationId, setCurrentConversationId] = useState(null);
     const [isOpenEmoji, setIsOpenEmoji] = useState(false);
     const [emojiCounter, setEmojiCounter] = useState(0);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [groupListing, setGroupListing] = useState([])
+    const [messageDeliver, setMessageDeliver] = useState(false)
+
 
     const socket = useRef();
     const { state } = useStateMachine({});
@@ -60,12 +65,24 @@ export default function Chat() {
         socket.current.on("getUsers", async (users) => {
             await setOnlineUsers(users.filter(i => i.userId !== state.userDetails._id))
         });
+
+   
         axios.get(Constants.GET_USER_URL).then(async res => {
             await setUserList(res.data.filter(i => i._id !== state.userDetails._id))
             await setFilterList(res.data.filter(i => i._id !== state.userDetails._id))
         })
+
+        // axios.get(Constants.GROUP_CHAT_URL + state.userDetails._id).then(async res => {
+        //     console.log("filterList",filterList,res.data)
+        //  //   await setFilterList( res.data)
+        //     console.log("after filterList",filterList)
+
+        //     // setGroupListing(res.data)
+        // })
     }, [state.userDetails, state.isLogin]);
 
+  
+    
     useEffect(() => {
         getConversations();
     }, [state.userDetails._id]);
@@ -99,6 +116,7 @@ export default function Chat() {
                         dateConvert(res.data.createdAt)
                     }
                 })
+
             }
             catch (err) {
                 return err
@@ -106,12 +124,20 @@ export default function Chat() {
         }
         getMessages()
 
+
     }, [currentChat]);
 
     const handleSubmit = async (e) => {
         setIsOpenEmoji(false)
         e.preventDefault();
-
+        let isUserOnline = onlineUsers.findIndex(i => i.userId === currentChat?._id)
+        console.log("isUserOnline", isUserOnline)
+        // if (isUserOnline === 0) {
+        //     setMessageDeliver(true)
+        // }
+        // else{
+        //     setMessageDeliver(false)
+        // }
         const message = {
             senderId: state.userDetails._id,
             message: newMessage,
@@ -237,7 +263,6 @@ export default function Chat() {
      */
     const onChange = async ({ fileList: newFileList }) => {
         const formData = new FormData();
-        console.log(newFileList[0].originFileObj)
         formData.append("attachment", newFileList[0].originFileObj)
         formData.append("type", "image")
         const config = {
@@ -264,20 +289,30 @@ export default function Chat() {
         const imgWindow = window.open(src);
         imgWindow.document.write(image.outerHTML);
     };
+
+    const handleChannelClick = () => {
+        setIsCreateModalOpen(true)
+    }
+
     return (
         <>
             <Topbar />
             <div className="messenger">
                 <div className="chatMenu">
                     <div className="chatMenuWrapper">
+
                         <input placeholder="Search for friends" className="chatMenuInput" onChange={(e) => debounced(e.target.value)} />
                         {filterList.map((list) => (
                             <div onClick={() => {
                                 handleConversation(list)
                             }}>
-                                <Conversation conversation={list} currentUser={state.userDetails} />
+                                <Conversation conversation={list} currentUser={state.userDetails} groupListing={groupListing} />
                             </div>
                         ))}
+                    </div>
+                    <div className="createChannel">
+                        {/* <PlusOutlined />   */}
+                        <span style={{ marginLeft: "80px" }} onClick={() => handleChannelClick()}>Create Channel</span>
                     </div>
                 </div>
 
@@ -293,6 +328,7 @@ export default function Chat() {
                                     <strong> {currentChat?.username}</strong>
                                     <div className="chatLine"></div></> : ""}
                         </div>
+
                     </div>
 
                     <div className="chatBoxWrapper">
@@ -300,16 +336,15 @@ export default function Chat() {
                             <>
                                 <div className={isOpenEmoji ? "chatBoxWithEmojiTop" : "chatBoxTop"}>
                                     {/* <div className="chatBoxTop"> */}
-
                                     {messages.map((m, index) => (
                                         <div ref={scrollRef}>
                                             <Message message={m} own={m.senderId === state.userDetails._id ? true : false}
-                                                isShowDay={chatDate(index)} />
+                                                isShowDay={chatDate(index)} isMessageDeliver={messageDeliver} />
                                         </div>
                                     ))}
                                 </div>
-
                                 {isOpenEmoji ?
+
                                     <div className="chatEmoji">
 
                                         <EmojiPicker
@@ -364,6 +399,13 @@ export default function Chat() {
                         />
                     </div>
                 </div>
+
+                <NewChannel isCreateModalOpen={isCreateModalOpen}
+                    setIsCreateModalOpen={setIsCreateModalOpen}
+                    userList={filterList}
+                    currentId={state.userDetails._id}
+                    setGroupListing={setGroupListing}
+                />
             </div>
         </>
     );

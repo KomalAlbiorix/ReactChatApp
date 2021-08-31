@@ -1,8 +1,11 @@
 import "./message.css";
 // import { format } from 'timeago.js';
 import { dateConvert, timeConvert } from "../../utils/common";
+import {CheckOutlined} from '@ant-design/icons';
 
-export default function Message({ message, own, isShowDay }) {
+
+export default function Message({ message, own, isShowDay,isMessageDeliver }) {
+
     return (
         <div className={own ? "message own" : "message"}>
             {isShowDay && <div style={{ textAlign: "center", display: "flex", alignSelf: "center" }}>{dateConvert(message.createdAt)}</div>}
@@ -15,10 +18,19 @@ export default function Message({ message, own, isShowDay }) {
                             controls />
                         : <img src={`http://localhost:4000/${message.message.split("/")[1]}`}
                             alt="text" style={{ maxWidth: "200px" }} />
-                    : <p className="messageText">{message?.message}</p>
+                    :<> <p className="messageText" >{message?.message}</p></>
+                    
                 }
             </div>
+         
             <div className="messageBottom">{timeConvert(message.createdAt)}</div>
+            
+            
+            {/* {isMessageDeliver && own? 
+            <>
+            <CheckOutlined />
+            <CheckOutlined /></>
+            :""} */}
             {/* <div className="messageBottom">{message?.createdAt}</div> */}
         </div >
     )

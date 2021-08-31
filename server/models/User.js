@@ -18,8 +18,10 @@ const UserSchema = new mongoose.Schema(
     },
     profilePicture: {
       type: String,
-    
     },
+    groupName:{
+      type: String,
+    }
   },
   { timestamps: true }
 );

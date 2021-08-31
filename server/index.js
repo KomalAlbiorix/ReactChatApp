@@ -31,6 +31,7 @@ require("./routes/auth")(app);
 require("./routes/conversation")(app);
 require("./routes/message")(app);
 require("./routes/upload")(app);
+require("./routes/groupChat")(app);
 
 app.listen(4000, () => {
     console.log("Backend server is running!");

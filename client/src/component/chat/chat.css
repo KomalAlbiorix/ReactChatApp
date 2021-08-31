@@ -200,6 +200,34 @@ padding: 10px;
     width: 0px !important;
     margin-left: 10px !important;
   }
+
+  .createChannel{
+    
+    align-items: center;
+    margin-top: 60%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 10px;
+  }
+
+  .createChannel:hover{
+    background-color: gray;
+}
+
+.userList{
+  padding: 10px;
+  flex: 5.5
+}
+
+.userList:hover{
+  background-color: rgb(219, 217, 217);
+}
+.userCheckbox{
+  align-items: right;
+  float: right;
+  border-radius: 10px !important;
+}
   
   
 
